@@ -1,0 +1,40 @@
+name: Build
+on:
+  workflow_dispatch:
+    inputs:
+      buildArgs:
+        description: 'buildArgs ie: '
+        required: false
+        default: ''
+ #          -ldflags '-linkmode "external" -extldflags "-static"'
+env:
+  GOPROXY: "https://proxy.golang.org"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build
+    strategy:
+      matrix:
+        go-version: [ 1.19.x ]
+        platform: [ ubuntu-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Build #CGO_ENABLED=0
+        run: |
+          rm -rf ./gogs
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o gogs -ldflags '-extldflags "-static"' ${{ github.event.inputs.buildArgs }} .
+          ls -l
+      - uses: actions/upload-artifact@v2
+#        if: ${{ github.event.inputs.bazelCmd == 'build' || startsWith(github.ref_name, 'dist4') }}
+        with:
+          name: gogs
+          path: "./gogs"
