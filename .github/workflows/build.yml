@@ -18,8 +18,8 @@ jobs:
     name: Build
     strategy:
       matrix:
-        go-version: [ 1.19.x ]
-        platform: [ ubuntu-latest]
+        go-version: [ 1.17.x ]
+        platform: [ ubuntu-18.04 ]
     runs-on: ${{ matrix.platform }}
     steps:
       - name: Install Go
@@ -28,11 +28,24 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Build #CGO_ENABLED=0
+      - name: Build
         run: |
-          rm -rf ./gogs
-          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o gogs -ldflags '-extldflags "-static"' ${{ github.event.inputs.buildArgs }} .
+          sudo apt-get install gawk bison gettext gcc-4.8 -y
+          strings /lib/x86_64-linux-gnu/libc.so.6 | grep GLIBC
+          wget http://ftp.gnu.org/pub/gnu/glibc/glibc-2.12.2.tar.gz
+          tar -zxf glibc-2.12.2.tar.gz
+          cd glibc-2.12.2
+          mkdir build && cd build
+          ../configure --prefix=/usr/local
+          make -j4
+          sudo make install
+          strings /lib/x86_64-linux-gnu/libc.so.6 | grep GLIBC
+          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o gogs  -ldflags '-s -w  -linkmode "external" -extldflags "-static"' ${{ github.event.inputs.buildArgs }} .
           ls -l
+
+
+#         CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o gogs -ldflags '-extldflags "-static"' ${{ github.event.inputs.buildArgs }} .
+
       - uses: actions/upload-artifact@v2
 #        if: ${{ github.event.inputs.bazelCmd == 'build' || startsWith(github.ref_name, 'dist4') }}
         with:
