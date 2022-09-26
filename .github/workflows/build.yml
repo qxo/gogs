@@ -31,7 +31,7 @@ jobs:
       - name: Build #CGO_ENABLED=0
         run: |
           rm -rf ./gogs
-          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o gogs -ldflags '-extldflags "-static"' ${{ github.event.inputs.buildArgs }} .
+          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o gogs -ldflags '-extldflags "-static"' ${{ github.event.inputs.buildArgs }} .
           ls -l
       - uses: actions/upload-artifact@v2
 #        if: ${{ github.event.inputs.bazelCmd == 'build' || startsWith(github.ref_name, 'dist4') }}
